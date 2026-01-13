@@ -1,0 +1,7 @@
+{
+  "name": "Aura Nutrition",
+  "description": "A premium, motion-first AI nutrition tracker that transforms meal logging into an effortless, emotionally engaging experience.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
