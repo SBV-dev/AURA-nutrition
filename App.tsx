@@ -119,7 +119,7 @@ const AuthScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         <div className="absolute top-[-10%] left-[-20%] w-[140%] h-[60%] bg-emerald-500/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-20%] w-[100%] h-[50%] bg-blue-500/10 blur-[120px] rounded-full" />
       </div>
-      <motion.div key={view} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="z-10 text-center flex flex-col items-center w-full max-w-sm">
+      <motion.div key={view} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="z-10 text-center flex flex-col items-center w-full max-sm:max-w-xs max-w-sm">
         <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-emerald-500/20 border backdrop-blur-xl ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}>
           <Logo className="w-16 h-16" />
         </div>
@@ -305,6 +305,7 @@ const AppContent: React.FC = () => {
   const [isInviteSuccess, setIsInviteSuccess] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const totals = useMemo(() => meals.reduce((acc, meal) => ({
     calories: acc.calories + meal.calories,
@@ -315,6 +316,42 @@ const AppContent: React.FC = () => {
 
   const waterTotal = useMemo(() => hydration.reduce((acc, curr) => acc + curr.amount, 0), [hydration]);
   const compliance = useMemo(() => goal.calories > 0 ? Math.min(100, Math.round((totals.calories / goal.calories) * 100)) : 0, [totals, goal]);
+
+  // DERIVED DATA FOR INSIGHTS (Removing Mock)
+  const dailyCalorieHistory = useMemo(() => {
+    const history = [];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toDateString();
+      const dayTotal = meals
+        .filter(m => new Date(m.timestamp).toDateString() === dateStr)
+        .reduce((sum, m) => sum + m.calories, 0);
+      history.push(dayTotal);
+    }
+    return history;
+  }, [meals]);
+
+  const dailyWeightHistory = useMemo(() => {
+    // Return profile weight for now as base trend if no history
+    const base = userProfile?.weight || goal.weight || 0;
+    return Array(7).fill(base);
+  }, [userProfile, goal]);
+
+  const chartLabels = useMemo(() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const labels = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      labels.push(days[d.getDay()]);
+    }
+    return labels;
+  }, []);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -360,6 +397,12 @@ const AppContent: React.FC = () => {
       if (userProfile) localStorage.setItem(`aura_profile_${uId}`, JSON.stringify(userProfile));
     }
   }, [meals, hydration, goal, userProfile, savedPlans, chatMessages, user]);
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const appBgClass = theme === 'dark' ? 'bg-black text-white' : 'bg-slate-50 text-slate-900';
   const glassClass = theme === 'dark' ? 'glass' : 'bg-white border border-slate-200 shadow-sm';
@@ -565,7 +608,7 @@ Powered by Aura Nutrition AI 🚀`;
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar px-6 pb-64 relative z-10">
+      <main className={`flex-1 overflow-y-auto no-scrollbar px-6 relative z-10 ${currentView === View.CHAT ? 'pb-80' : 'pb-64'}`}>
         <AnimatePresence mode="wait">
           {currentView === View.TODAY && (
             <PageTransition key="today">
@@ -749,6 +792,126 @@ Powered by Aura Nutrition AI 🚀`;
             </PageTransition>
           )}
 
+          {currentView === View.CHAT && (
+            <PageTransition key="chat">
+              <div className="flex flex-col h-full pt-4">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 bg-emerald-500 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-emerald-500/20"><MessageCircle className="w-8 h-8 text-black" /></div>
+                  <div>
+                    <h2 className="text-2xl font-black">Aura Intelligence</h2>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${subTextClass}`}>Live Bio-Assistant</p>
+                  </div>
+                </div>
+
+                <div 
+                  ref={chatScrollRef}
+                  className="flex-1 space-y-4 overflow-y-auto no-scrollbar pb-10 min-h-[50vh]"
+                >
+                  {chatMessages.map((msg, i) => (
+                    <motion.div 
+                      key={i} 
+                      initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[85%] p-5 rounded-[2rem] ${msg.role === 'user' ? 'bg-emerald-500 text-black rounded-tr-sm' : `${glassClass} rounded-tl-sm text-white`}`}>
+                        <p className="text-sm font-medium leading-relaxed">{msg.text}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {isChatTyping && (
+                    <div className="flex justify-start">
+                      <div className={`p-5 rounded-[2rem] ${glassClass} rounded-tl-sm`}>
+                        <div className="flex gap-1">
+                          {[0, 1, 2].map(i => (
+                            <motion.div 
+                              key={i}
+                              animate={{ y: [0, -4, 0] }}
+                              transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.2 }}
+                              className="w-1.5 h-1.5 rounded-full bg-emerald-500" 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="fixed bottom-36 left-6 right-6 z-20">
+                  <div className={`p-2 rounded-[2rem] border backdrop-blur-3xl shadow-2xl flex items-center gap-2 ${theme === 'dark' ? 'bg-neutral-900/90 border-white/10' : 'bg-white/90 border-slate-200'}`}>
+                    <input 
+                      value={chatInput}
+                      onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleChatSend()}
+                      placeholder="Ask Aura anything..." 
+                      className="flex-1 bg-transparent border-none outline-none p-4 text-sm font-bold placeholder:opacity-30"
+                    />
+                    <button 
+                      onClick={handleChatSend}
+                      className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center active:scale-90 transition-transform"
+                    >
+                      <Send className="w-5 h-5 text-black" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </PageTransition>
+          )}
+
+          {currentView === View.INSIGHTS && (
+            <PageTransition key="insights">
+              <div className="py-4 space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-emerald-500 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-emerald-500/20"><PieChart className="w-8 h-8 text-black" /></div>
+                  <div>
+                    <h2 className="text-2xl font-black">Performance</h2>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${subTextClass}`}>Metabolic Insights</p>
+                  </div>
+                </div>
+
+                <div className={`p-8 rounded-[2.5rem] ${glassClass}`}>
+                  <h3 className="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2"><Target className="w-4 h-4 text-emerald-500" /> Caloric Compliance</h3>
+                  <BarChart 
+                    data={dailyCalorieHistory} 
+                    labels={chartLabels} 
+                    maxValue={goal.calories * 1.2} 
+                    color={COLORS.primary} 
+                  />
+                </div>
+
+                <div className={`p-8 rounded-[2.5rem] ${glassClass}`}>
+                  <h3 className="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-emerald-500" /> Metabolic Efficiency</h3>
+                  <div className="h-40">
+                    <LineChart data={dailyWeightHistory} color={COLORS.primary} />
+                  </div>
+                  <div className="flex justify-between mt-6 pt-6 border-t border-white/5">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-white/40">Efficiency Score</p>
+                      <p className="text-2xl font-black text-white">{compliance}%</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black uppercase text-white/40">Bio-Similarity</p>
+                      <p className="text-2xl font-black text-emerald-400">{compliance > 90 ? 'Optimal' : (compliance > 70 ? 'Stable' : 'Recalibrating')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div className={`p-6 rounded-[2rem] ${glassClass}`}>
+                      <p className="text-[10px] font-black uppercase text-white/40 mb-2">Total Protein</p>
+                      <p className="text-2xl font-black">{Math.round(meals.reduce((a,c) => a+c.macros.protein, 0))}g</p>
+                   </div>
+                   <div className={`p-6 rounded-[2rem] ${glassClass}`}>
+                      <p className="text-[10px] font-black uppercase text-white/40 mb-2">Logged Hydration</p>
+                      <p className="text-2xl font-black">{(waterTotal / 1000).toFixed(1)}L</p>
+                   </div>
+                </div>
+                
+                <div className="h-32 w-full" />
+              </div>
+            </PageTransition>
+          )}
+
           {currentView === View.PROFILE && (
             <PageTransition key="profile">
               <div className="py-8 flex flex-col items-center w-full">
@@ -771,7 +934,6 @@ Powered by Aura Nutrition AI 🚀`;
                 <div className="text-center mb-8">
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <h2 className="text-3xl font-black">{userProfile?.name || user?.email.split('@')[0]}</h2>
-                    {user?.isVerified && <VerifiedBadge />}
                   </div>
                   <p className={`font-medium ${subTextClass}`}>Tier 1 Member • {userProfile?.primaryGoal || 'Optimizing'}</p>
                 </div>
