@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Minus, Plus, GlassWater, Check, X, Container } from 'lucide-react';
-import { COLORS } from '../constants';
+import { COLORS } from '../constants.ts';
 
 interface HydrationModalProps {
   currentAmount: number;
@@ -20,7 +20,6 @@ export const HydrationModal: React.FC<HydrationModalProps> = ({ currentAmount, t
 
   const handleAdd = (amount: number) => {
     onAdd(amount);
-    // Optional: Close on quick add or keep open? keeping open for rapid logging
   };
 
   return (
@@ -37,7 +36,6 @@ export const HydrationModal: React.FC<HydrationModalProps> = ({ currentAmount, t
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="w-full max-w-md bg-[#09090b] border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 pb-12 shadow-2xl relative overflow-hidden"
       >
-        {/* Ambient Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-cyan-500/20 blur-[80px] pointer-events-none" />
 
         <div className="flex justify-between items-center mb-8 relative z-10">
@@ -55,7 +53,6 @@ export const HydrationModal: React.FC<HydrationModalProps> = ({ currentAmount, t
           </button>
         </div>
 
-        {/* Main Vis */}
         <div className="flex flex-col items-center mb-10 relative z-10">
           <div className="relative w-48 h-48 flex items-center justify-center mb-6">
              <svg className="w-full h-full transform -rotate-90">
@@ -94,7 +91,6 @@ export const HydrationModal: React.FC<HydrationModalProps> = ({ currentAmount, t
           </div>
         </div>
 
-        {/* Quick Adds */}
         <div className="grid grid-cols-3 gap-3 mb-6 relative z-10">
            <button onClick={() => handleAdd(250)} className="flex flex-col items-center gap-2 p-4 bg-white/5 rounded-2xl hover:bg-cyan-500/20 hover:border-cyan-500/30 border border-transparent transition-all group">
               <GlassWater className="w-6 h-6 text-cyan-200 group-hover:scale-110 transition-transform" />
@@ -113,7 +109,6 @@ export const HydrationModal: React.FC<HydrationModalProps> = ({ currentAmount, t
            </button>
         </div>
 
-        {/* Custom Input */}
         <div className="bg-white/5 rounded-2xl p-2 flex items-center gap-4 relative z-10">
           <button onClick={() => setCustomAdd(Math.max(50, customAdd - 50))} className="p-3 bg-black/20 rounded-xl hover:bg-black/40 text-white/70">
             <Minus className="w-5 h-5" />

@@ -1,4 +1,5 @@
 
+
 export enum View {
   AUTH = 'auth',
   ONBOARDING = 'onboarding',
@@ -27,6 +28,31 @@ export interface PlanConfiguration {
   spiceLevel: SpiceLevel;
   tasteProfile: TasteProfile;
   dietaryRestrictions: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  logout: () => void;
+  resetPassword: (email: string) => Promise<void>;
+  error: string | null;
+  clearError: () => void;
+}
+
+export type Theme = 'dark' | 'light';
+
+export interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
 }
 
 export interface UserProfile {

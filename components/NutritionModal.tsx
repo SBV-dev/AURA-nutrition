@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Info, ShieldAlert, RefreshCw, ArrowLeft, Edit3 } from 'lucide-react';
-import { NutritionEstimateResponse } from '../types';
-import { COLORS } from '../constants';
+import { NutritionEstimateResponse } from '../types.ts';
+import { COLORS } from '../constants.ts';
 
 interface NutritionModalProps {
   estimate: NutritionEstimateResponse;
@@ -23,11 +23,9 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editInput, setEditInput] = useState('');
 
-  // Pre-fill the edit input when entering edit mode or when estimate changes
   useEffect(() => {
     if (estimate) {
       const itemsString = estimate.items.join(', ');
-      // If the name is generic, rely on items, otherwise combine them for a full description
       setEditInput(`${estimate.name}: ${itemsString}`);
     }
   }, [estimate]);
@@ -67,10 +65,9 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
               <button onClick={() => setIsEditing(false)} className="p-2 rounded-full bg-white/5 hover:bg-white/10">
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <h2 className="text-2xl font-bold">Refine Protocol</h2>
+              <h2 className="text-2xl font-bold">Refine Meal Log</h2>
             </div>
 
-            {/* Disclaimer / Instruction */}
             <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex gap-3">
               <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
               <p className="text-xs text-indigo-200 leading-relaxed font-medium">

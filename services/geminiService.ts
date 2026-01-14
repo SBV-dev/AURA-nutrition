@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { NutritionEstimateResponse, MealPlan, UserGoal, UserProfile, PlanConfiguration, Meal, Message } from "../types";
+import { NutritionEstimateResponse, MealPlan, UserGoal, UserProfile, PlanConfiguration, Meal, Message } from "../types.ts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -157,15 +157,38 @@ export async function generateMealPlan(goals: UserGoal, config: PlanConfiguratio
     return JSON.parse(text);
   } catch (e) {
     console.error("Failed to parse meal plan JSON", e);
-    throw new Error("Failed to generate meal plan protocol.");
+    throw new Error("Failed to generate meal plan.");
   }
 }
 
 export async function calculateNutritionalGoals(profile: UserProfile): Promise<UserGoal> {
   const model = 'gemini-3-flash-preview';
+
+  // Calculate BMR using Mifflin-St Jeor Equation
+  const s = profile.gender === 'Male' ? 5 : -161;
+  const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + s;
+
+  // Calculate TDEE based on activity level
+  const activityMultipliers: Record<string, number> = {
+    'Sedentary': 1.2,
+    'Lightly Active': 1.375,
+    'Moderately Active': 1.55,
+    'Very Active': 1.725,
+    'Super Active': 1.9
+  };
+  const multiplier = activityMultipliers[profile.activityLevel] || 1.375;
+  const tdee = bmr * multiplier;
+
   const response = await ai.models.generateContent({
     model,
-    contents: `Calculate optimal daily nutritional goals for: ${JSON.stringify(profile)}. Return JSON.`,
+    contents: `Calculate optimal daily nutritional goals for this user profile: ${JSON.stringify(profile)}.
+    
+    Baseline Mathematical Calculation (Mifflin-St Jeor):
+    - BMR: ${Math.round(bmr)} kcal
+    - TDEE: ${Math.round(tdee)} kcal
+    
+    Use this baseline to scientifically adjust calories and macros based on their specific goal (${profile.primaryGoal}).
+    Return JSON.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -186,7 +209,15 @@ export async function calculateNutritionalGoals(profile: UserProfile): Promise<U
   try {
     return JSON.parse(cleanJsonText(response.text || "{}"));
   } catch (e) {
-     return { calories: 2000, protein: 150, carbs: 200, fats: 65, weight: 75, water: 2500 };
+     // Fallback to TDEE estimate if AI fails
+     return { 
+       calories: Math.round(tdee), 
+       protein: Math.round(profile.weight * 2), // ~2g per kg
+       carbs: Math.round((tdee * 0.4) / 4), 
+       fats: Math.round((tdee * 0.3) / 9),
+       weight: profile.weight, 
+       water: 2500 
+     };
   }
 }
 
@@ -230,13 +261,11 @@ export async function getChatResponse(
       CRITICAL DISCLAIMER PROTOCOL:
       1. You must explicitly state that you are an AI and NOT a doctor or medical professional.
       2. Your advice is for informational and tracking purposes only.
-      3. Do not provide medical diagnoses or treatment advice. If a user asks about a medical condition, tell them to consult a professional.
+      3. Do not provide medical diagnoses or treatment advice. If a professional medical opinion is needed, tell them to consult a qualified expert.
       
       BEHAVIOR:
-      - Use the provided user context to give specific, personalized advice.
-      - If the user asks "How am I doing?", compare their 'Consumed Today' vs 'Daily Goals'.
-      - Be encouraging, scientific, and concise.
-      - Analyze their logged meals if asked about diet quality.`,
+      - Use provided context for specific advice.
+      - Be encouraging yet concise.`,
       thinkingConfig: { thinkingBudget: 8192 }
     }
   });

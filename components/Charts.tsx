@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { COLORS } from '../constants';
+import { COLORS } from '../constants.ts';
 
 export const BarChart: React.FC<{ 
   data: number[]; 
@@ -14,7 +14,6 @@ export const BarChart: React.FC<{
   return (
     <div className="flex items-end justify-between h-32 gap-2 mt-4 select-none">
       {data.map((val, i) => {
-        // Prevent division by zero if maxValue is 0
         const safeMax = maxValue > 0 ? maxValue : 1;
         const height = (val / safeMax) * 100;
         const isSelected = selectedIndex === i;
@@ -27,7 +26,6 @@ export const BarChart: React.FC<{
             onClick={() => onSelect?.(i)}
             whileTap={{ scale: 0.95 }}
           >
-            {/* Active Indicator Line */}
             {isSelected && (
               <motion.div 
                 layoutId="activeIndicator"
@@ -66,11 +64,10 @@ export const LineChart: React.FC<{
 }> = ({ data, color, onSelect, selectedIndex }) => {
   const max = Math.max(...data);
   const min = Math.min(...data);
-  const range = max - min || 1; // Prevent zero division
+  const range = max - min || 1;
 
   const points = data.map((val, i) => {
     const x = (i / (data.length - 1)) * 100;
-    // Normalize y between 10% and 90% of the view box to keep points visible
     const normalizedVal = (val - min) / range;
     const y = 90 - (normalizedVal * 80); 
     return `${x},${y}`;
@@ -86,7 +83,6 @@ export const LineChart: React.FC<{
           </linearGradient>
         </defs>
         
-        {/* Fill Area */}
         <motion.path
           d={`M 0,100 L ${points} L 100,100 Z`}
           fill={`url(#lineGradient-${color})`}
@@ -95,7 +91,6 @@ export const LineChart: React.FC<{
           transition={{ duration: 1, delay: 0.2 }}
         />
 
-        {/* The Line */}
         <motion.path
           d={`M ${points}`}
           fill="none"
@@ -108,7 +103,6 @@ export const LineChart: React.FC<{
           transition={{ type: "spring", stiffness: 100, damping: 20, duration: 1.5 }}
         />
 
-        {/* Data Points */}
         {data.map((val, i) => {
           const x = (i / (data.length - 1)) * 100;
           const normalizedVal = (val - min) / range;
@@ -117,10 +111,7 @@ export const LineChart: React.FC<{
 
           return (
             <g key={i} onClick={() => onSelect?.(i)}>
-              {/* Invisible Hit Area for easier tapping */}
               <circle cx={x} cy={y} r="8" fill="transparent" className="cursor-pointer" />
-              
-              {/* Visible Dot */}
               <motion.circle
                 cx={x}
                 cy={y}
@@ -135,21 +126,6 @@ export const LineChart: React.FC<{
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="cursor-pointer pointer-events-none" 
               />
-              
-              {/* Selection Ring */}
-              {isSelected && (
-                <motion.circle
-                  initial={{ r: 2, opacity: 1 }}
-                  animate={{ r: 8, opacity: 0 }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                  cx={x}
-                  cy={y}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="0.5"
-                  className="pointer-events-none"
-                />
-              )}
             </g>
           );
         })}

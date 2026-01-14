@@ -103,7 +103,7 @@ export const SplashLogo: React.FC<{ onComplete: () => void }> = ({ onComplete })
           transition={{ duration: 0.8, delay: 3.2 }}
           className="text-lime-400/80 text-[10px] font-bold uppercase tracking-[0.4em] mt-2"
         >
-          Bio-Intelligence
+          Nutrition Intelligence
         </motion.p>
       </div>
     </div>
