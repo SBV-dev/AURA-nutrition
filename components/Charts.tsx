@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { COLORS } from '../constants.ts';
+import { COLORS } from '../constants';
 
 export const BarChart: React.FC<{ 
   data: number[]; 
@@ -43,7 +42,6 @@ export const BarChart: React.FC<{
                 style={{ backgroundColor: isSelected ? 'white' : color }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                {isSelected && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
               </motion.div>
             </div>
             <span className={`text-[10px] font-bold uppercase tracking-tighter transition-colors ${isSelected ? 'text-white scale-110' : 'text-white/30 group-hover:text-white/50'}`}>
@@ -88,7 +86,6 @@ export const LineChart: React.FC<{
           fill={`url(#lineGradient-${color})`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
         />
 
         <motion.path
@@ -100,7 +97,6 @@ export const LineChart: React.FC<{
           strokeLinejoin="round"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ type: "spring", stiffness: 100, damping: 20, duration: 1.5 }}
         />
 
         {data.map((val, i) => {
@@ -117,13 +113,7 @@ export const LineChart: React.FC<{
                 cy={y}
                 r={isSelected ? 4 : 2}
                 fill={isSelected ? "#fff" : color}
-                stroke={isSelected ? color : "transparent"}
-                strokeWidth={isSelected ? 0.5 : 0}
-                animate={{ 
-                  r: isSelected ? 5 : 2,
-                  scale: isSelected ? 1.2 : 1 
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                animate={{ r: isSelected ? 5 : 2 }}
                 className="cursor-pointer pointer-events-none" 
               />
             </g>

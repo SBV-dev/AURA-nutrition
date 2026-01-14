@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { COLORS } from '../constants.ts';
+import { COLORS } from '../constants';
 
 interface RingProps {
   value: number;

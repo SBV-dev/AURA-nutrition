@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Info, ShieldAlert, RefreshCw, ArrowLeft, Edit3 } from 'lucide-react';
-import { NutritionEstimateResponse } from '../types.ts';
-import { COLORS } from '../constants.ts';
+import { NutritionEstimateResponse } from '../types';
+import { COLORS } from '../constants';
 
 interface NutritionModalProps {
   estimate: NutritionEstimateResponse;
@@ -72,7 +71,7 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
               <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
               <p className="text-xs text-indigo-200 leading-relaxed font-medium">
                 <strong className="text-indigo-100 block mb-1">AI Calibration</strong>
-                Image recognition may not always be right. You can correct the food names and portion sizes below, and the numbers will be automatically recalculated.
+                Correct the food names and portion sizes below, and the numbers will be automatically recalculated.
               </p>
             </div>
 
@@ -82,7 +81,7 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
                 value={editInput}
                 onChange={(e) => setEditInput(e.target.value)}
                 className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-white font-medium outline-none focus:border-emerald-500 transition-colors resize-none"
-                placeholder="E.g., 200g Grilled Chicken Breast, 1 cup Brown Rice..."
+                placeholder="E.g., 200g Grilled Chicken Breast..."
               />
             </div>
 
@@ -91,15 +90,7 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
               disabled={isRecalculating}
               className="w-full py-4 bg-emerald-500 text-black font-black rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isRecalculating ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" /> Calculating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-5 h-5" /> Recalculate Numbers
-                </>
-              )}
+              {isRecalculating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <><RefreshCw className="w-5 h-5" /> Recalculate</>}
             </button>
           </motion.div>
         ) : (
@@ -116,7 +107,6 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
                   <span className={`text-sm font-bold ${getConfidenceColor(estimate.confidence)}`}>
                     {Math.round(estimate.confidence * 100)}% Match
                   </span>
-                  <Info className="w-3 h-3 text-white/30" />
                 </div>
               </div>
               <div className="text-right">
@@ -124,10 +114,6 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
                 <span className="block text-[10px] font-bold text-white/40 uppercase">kcal</span>
               </div>
             </div>
-
-            <p className="text-white/60 mb-8 leading-relaxed italic">
-              "{estimate.reasoning}"
-            </p>
 
             <div className="grid grid-cols-3 gap-4 mb-8">
               {[
@@ -142,32 +128,16 @@ export const NutritionModal: React.FC<NutritionModalProps> = ({
               ))}
             </div>
 
-            <div className="mb-8">
-              <h3 className="text-sm font-bold text-white/40 uppercase mb-4 tracking-wider">Identified Ingredients</h3>
-              <div className="flex flex-wrap gap-2">
-                {estimate.items.map((item, i) => (
-                  <span key={i} className="px-4 py-2 bg-white/5 rounded-full text-sm font-medium border border-white/5">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 mb-8 p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-amber-200 text-xs">
-              <ShieldAlert className="w-4 h-4 flex-shrink-0" />
-              <span>These are AI estimates based on visual data and standard serving sizes.</span>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <button 
                 onClick={() => setIsEditing(true)}
-                className="py-4 px-6 rounded-2xl bg-white/5 font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                className="py-4 px-6 rounded-2xl bg-white/5 font-bold flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-4 h-4" /> Adjust
               </button>
               <button 
                 onClick={onConfirm}
-                className="py-4 px-6 rounded-2xl bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
+                className="py-4 px-6 rounded-2xl bg-emerald-500 text-black font-black flex items-center justify-center gap-2"
               >
                 <Check className="w-5 h-5" />
                 Log Meal

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
@@ -11,19 +10,19 @@ import {
   Users, ShieldCheck
 } from 'lucide-react';
 
-import { View, Meal, UserGoal, NutritionEstimateResponse, HydrationEntry, WeightEntry, Message, MealPlan, ShoppingCategory, UserProfile, Gender, ActivityLevel, GoalType, MacroPreference, SnackPreference, SpiceLevel, TasteProfile } from './types.ts';
-import { COLORS, DEFAULT_GOAL, SPRING_TRANSITION } from './constants.ts';
-import { ProgressRing, MiniMacro } from './components/ProgressRing.tsx';
-import { CameraView } from './components/CameraView.tsx';
-import { NutritionModal } from './components/NutritionModal.tsx';
-import { HydrationModal } from './components/HydrationModal.tsx';
-import { BarChart, LineChart } from './components/Charts.tsx';
-import { SplashLogo } from './components/SplashLogo.tsx';
-import { Logo } from './components/Logo.tsx';
-import { estimateNutrition, getChatResponse, generateMealPlan, calculateNutritionalGoals } from './services/geminiService.ts';
-import { PageTransition } from './components/MotionWrapper.tsx';
-import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext.tsx';
+import { View, Meal, UserGoal, NutritionEstimateResponse, HydrationEntry, WeightEntry, Message, MealPlan, ShoppingCategory, UserProfile, Gender, ActivityLevel, GoalType, MacroPreference, SnackPreference, SpiceLevel, TasteProfile } from './types';
+import { DEFAULT_GOAL, SPRING_TRANSITION, COLORS } from './constants';
+import { ProgressRing, MiniMacro } from './components/ProgressRing';
+import { CameraView } from './components/CameraView';
+import { NutritionModal } from './components/NutritionModal';
+import { HydrationModal } from './components/HydrationModal';
+import { BarChart, LineChart } from './components/Charts';
+import { SplashLogo } from './components/SplashLogo';
+import { Logo } from './components/Logo';
+import { estimateNutrition, getChatResponse, generateMealPlan, calculateNutritionalGoals } from './services/geminiService';
+import { PageTransition } from './components/MotionWrapper';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
 const VerifiedBadge = () => (
   <motion.div 
@@ -307,7 +306,6 @@ const AppContent: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Derived Insights data (Dynamic)
   const totals = useMemo(() => meals.reduce((acc, meal) => ({
     calories: acc.calories + meal.calories,
     protein: acc.protein + meal.macros.protein,
@@ -318,7 +316,6 @@ const AppContent: React.FC = () => {
   const waterTotal = useMemo(() => hydration.reduce((acc, curr) => acc + curr.amount, 0), [hydration]);
   const compliance = useMemo(() => goal.calories > 0 ? Math.min(100, Math.round((totals.calories / goal.calories) * 100)) : 0, [totals, goal]);
 
-  // Persistence: Load on startup
   useEffect(() => {
     if (user && !authLoading) {
       const uId = user.id;
@@ -352,7 +349,6 @@ const AppContent: React.FC = () => {
     }
   }, [user, authLoading]);
 
-  // Persistence: Save on change
   useEffect(() => {
     if (user) {
       const uId = user.id;
@@ -526,7 +522,6 @@ Powered by Aura Nutrition AI 🚀`;
 
     if (navigator.share) {
       navigator.share(shareData).catch(() => {
-        // Fallback to clipboard
         navigator.clipboard.writeText(window.location.href).then(() => {
           setIsInviteSuccess(true);
           setTimeout(() => setIsInviteSuccess(false), 2000);
@@ -836,7 +831,6 @@ Powered by Aura Nutrition AI 🚀`;
         </AnimatePresence>
       </main>
 
-      {/* Persistent Dock and Modals remain same as before */}
       <div className={`fixed bottom-0 inset-x-0 h-40 flex justify-center items-center z-50 pointer-events-none bg-gradient-to-t ${theme === 'dark' ? 'from-black via-black/80' : 'from-white via-white/80'} to-transparent`}>
         <div className={`pointer-events-auto flex items-center gap-2 backdrop-blur-3xl p-3 rounded-[2.8rem] border shadow-2xl translate-y-[-15px] ${theme === 'dark' ? 'bg-neutral-900/90 border-white/10' : 'bg-white/90 border-slate-200'}`}>
           <button onClick={() => setCurrentView(View.TODAY)} className={`p-4 rounded-2xl transition-all duration-300 ${currentView === View.TODAY ? 'text-emerald-400 bg-emerald-500/10' : `${subTextClass}`}`}><Home /></button>

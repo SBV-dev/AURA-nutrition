@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -12,12 +11,17 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["node"]
   },
-  "include": ["./*.ts", "./*.tsx", "services/**/*.ts", "components/**/*.tsx", "contexts/**/*.tsx"]
+  "include": [
+    "./*.ts",
+    "./*.tsx",
+    "services/**/*.ts",
+    "components/**/*.tsx",
+    "contexts/**/*.tsx"
+  ]
 }

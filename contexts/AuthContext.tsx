@@ -1,10 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AuthContextType, User } from '../types.ts';
+import { AuthContextType, User } from '../types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper to generate a unique identity hash
 const generateIdentityHash = (email: string) => {
   return btoa(email + Date.now()).substring(0, 12).toUpperCase();
 };
@@ -34,7 +32,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           reject(err);
           return;
         }
-        // Simulated verified user for existing accounts
         const fakeUser: User = { 
           id: '1', 
           email, 
@@ -71,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const fakeUser: User = { 
           id: Date.now().toString(), 
           email, 
-          isVerified: true, // Simulated as verified for this demo
+          isVerified: true,
           verificationHash: generateIdentityHash(email)
         };
         setUser(fakeUser);
@@ -117,7 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('aura_user');
-    localStorage.removeItem('aura_onboarding_complete');
   };
 
   const clearError = () => setError(null);
