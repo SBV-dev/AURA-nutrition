@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
@@ -6,7 +7,8 @@ import {
   ArrowLeft, Utensils, Send, Loader2, Check, Zap, CheckCircle2, ShieldAlert,
   Clock, ShoppingBag, Info, X, ChevronDown, ListChecks, Trash2, Mail, Lock,
   Ruler, Weight, Activity, Trophy, Settings2, Coffee, Leaf, AlertCircle, Edit3, Save, Image as ImageIcon,
-  TrendingUp, Star, Thermometer, Bookmark, History, FileText, Moon, Sun, KeyRound, LogOut, RefreshCw
+  TrendingUp, Star, Thermometer, Bookmark, History, FileText, Moon, Sun, KeyRound, LogOut, RefreshCw, Share2,
+  Users, ShieldCheck
 } from 'lucide-react';
 
 import { View, Meal, UserGoal, NutritionEstimateResponse, HydrationEntry, WeightEntry, Message, MealPlan, ShoppingCategory, UserProfile, Gender, ActivityLevel, GoalType, MacroPreference, SnackPreference, SpiceLevel, TasteProfile } from './types.ts';
@@ -22,6 +24,16 @@ import { estimateNutrition, getChatResponse, generateMealPlan, calculateNutritio
 import { PageTransition } from './components/MotionWrapper.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext.tsx';
+
+const VerifiedBadge = () => (
+  <motion.div 
+    initial={{ scale: 0 }}
+    animate={{ scale: 1 }}
+    className="inline-flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+  >
+    <Check className="w-3 h-3 text-white stroke-[4]" />
+  </motion.div>
+);
 
 const StreakCounter: React.FC<{ days: number }> = ({ days }) => (
   <motion.div 
@@ -290,6 +302,8 @@ const AppContent: React.FC = () => {
   const [dietaryRestrictions, setDietaryRestrictions] = useState('');
   const [activePlanTab, setActivePlanTab] = useState<'MEALS' | 'SHOPPING'>('MEALS');
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [isShareSuccess, setIsShareSuccess] = useState(false);
+  const [isInviteSuccess, setIsInviteSuccess] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -475,6 +489,57 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleShareSnapshot = () => {
+    const verificationSection = user?.isVerified 
+      ? `\n🛡️ Verified User: YES\n🆔 ID Hash: ${user.verificationHash}`
+      : `\n🛡️ Verified User: NO`;
+
+    const text = `🌟 My Aura Daily Snapshot 🌟
+    
+🔥 Calories: ${totals.calories} / ${goal.calories} kcal
+💧 Hydration: ${waterTotal} / ${goal.water} ml
+
+🧬 Macros Breakdown:
+- Protein: ${Math.round(totals.protein)}g
+- Carbs: ${Math.round(totals.carbs)}g
+- Fats: ${Math.round(totals.fats)}g
+
+🥗 Meals logged: ${meals.length}
+✅ Daily Compliance: ${compliance}%
+${verificationSection}
+
+Powered by Aura Nutrition AI 🚀`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      setIsShareSuccess(true);
+      setTimeout(() => setIsShareSuccess(false), 2000);
+      if (navigator.vibrate) navigator.vibrate(50);
+    });
+  };
+
+  const handleInviteFriend = () => {
+    const shareData = {
+      title: 'Aura Nutrition AI',
+      text: 'Check out this AI nutrition tracker I am using! It scans meals with the camera.',
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(() => {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          setIsInviteSuccess(true);
+          setTimeout(() => setIsInviteSuccess(false), 2000);
+        });
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setIsInviteSuccess(true);
+        setTimeout(() => setIsInviteSuccess(false), 2000);
+      });
+    }
+  };
+
   if (viewState === 'SPLASH') return <AnimatePresence><SplashLogo onComplete={() => setViewState('APP')} /></AnimatePresence>;
   if (!user && !authLoading) return <AuthScreen onComplete={() => {}} />;
   if (user && needsOnboarding) return <Onboarding onComplete={handleOnboardingComplete} />;
@@ -496,6 +561,7 @@ const AppContent: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <Logo className="w-6 h-6" />
             <h1 className="text-xl font-black tracking-tight">AURA</h1>
+            {user?.isVerified && <VerifiedBadge />}
           </div>
           {currentView === View.TODAY && <StreakCounter days={streakDays} />}
         </div>
@@ -510,6 +576,15 @@ const AppContent: React.FC = () => {
             <PageTransition key="today">
               <div className="flex flex-col items-center py-8">
                 <ProgressRing value={totals.calories} total={goal.calories} size={280} stroke={16} color={COLORS.primary} label="Remaining" />
+                
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleShareSnapshot}
+                  className={`mt-4 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${isShareSuccess ? 'bg-emerald-500 text-black' : `${glassClass} ${subTextClass}`}`}
+                >
+                  {isShareSuccess ? <><Check className="w-3 h-3" /> Snapshot Copied!</> : <><Share2 className="w-3 h-3" /> Share Verified Snapshot</>}
+                </motion.button>
+
                 <div className="grid grid-cols-3 gap-6 my-12 w-full">
                   <MiniMacro label="Protein" value={totals.protein} total={goal.protein} color={COLORS.protein} />
                   <MiniMacro label="Carbs" value={totals.carbs} total={goal.carbs} color={COLORS.carbs} />
@@ -547,7 +622,7 @@ const AppContent: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="h-20 w-full" /> {/* Spacer to clear bottom dock */}
+                <div className="h-20 w-full" />
               </div>
             </PageTransition>
           )}
@@ -674,113 +749,94 @@ const AppContent: React.FC = () => {
                     )}
                   </div>
                 )}
-                <div className="h-32 w-full" /> {/* Extra clearance for the generation button config */}
-              </div>
-            </PageTransition>
-          )}
-
-          {currentView === View.INSIGHTS && (
-            <PageTransition key="insights">
-              <div className="flex flex-col pt-4 gap-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-blue-500 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-blue-500/20"><PieChart className="w-8 h-8 text-white" /></div>
-                  <div>
-                    <h2 className="text-2xl font-black">Metabolic Pulse</h2>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${subTextClass}`}>Live Analytics</p>
-                  </div>
-                </div>
-
-                <div className={`p-8 rounded-[2.5rem] ${glassClass}`}>
-                   <div className="flex justify-between items-center mb-6">
-                      <h3 className="font-black">7-Day Calorie Trend</h3>
-                      <TrendingUp className="w-5 h-5 text-emerald-500" />
-                   </div>
-                   <BarChart 
-                      data={[0, 0, 0, 0, 0, 0, totals.calories]} 
-                      labels={['M', 'T', 'W', 'T', 'F', 'S', 'S']} 
-                      maxValue={Math.max(goal.calories, totals.calories)} 
-                      color={COLORS.primary} 
-                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                   <div className={`p-6 rounded-[2rem] ${glassClass}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${subTextClass}`}>Consumed Protein</p>
-                      <p className="text-2xl font-black">{Math.round(totals.protein)}<span className="text-xs ml-1 opacity-40">g</span></p>
-                      <div className="h-1 w-full bg-blue-500/20 rounded-full mt-3 overflow-hidden">
-                         <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (totals.protein / goal.protein) * 100)}%` }} />
-                      </div>
-                   </div>
-                   <div className={`p-6 rounded-[2rem] ${glassClass}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${subTextClass}`}>Goal Compliance</p>
-                      <p className="text-2xl font-black">{compliance}<span className="text-xs ml-1 opacity-40">%</span></p>
-                      <div className="h-1 w-full bg-emerald-500/20 rounded-full mt-3 overflow-hidden">
-                         <div className="h-full bg-emerald-500" style={{ width: `${compliance}%` }} />
-                      </div>
-                   </div>
-                </div>
-                <div className="h-20 w-full" /> {/* Spacer to clear bottom dock */}
-              </div>
-            </PageTransition>
-          )}
-
-          {currentView === View.CHAT && (
-            <PageTransition key="chat">
-              <div className="flex flex-col h-full pt-4">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 bg-indigo-500 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-indigo-500/20"><MessageCircle className="w-8 h-8 text-white" /></div>
-                  <div>
-                    <h2 className="text-2xl font-black">Aura intelligence</h2>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${subTextClass}`}>Active thinking mode</p>
-                  </div>
-                </div>
-                <div className="flex-1 space-y-4 pb-12 overflow-y-auto no-scrollbar">
-                  {chatMessages.map((m, i) => (
-                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] p-5 rounded-[2rem] ${m.role === 'user' ? 'bg-indigo-500 text-white' : `${glassClass}`}`}>
-                        <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{m.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {isChatTyping && <div className={`p-4 rounded-2xl w-fit flex gap-1.5 animate-pulse ${glassClass}`}><div className="w-2 h-2 bg-indigo-500/40 rounded-full" /><div className="w-2 h-2 bg-indigo-500/40 rounded-full" /><div className="w-2 h-2 bg-indigo-500/40 rounded-full" /></div>}
-                  <div className="h-20 w-full" /> {/* Spacer for chat messages list */}
-                </div>
-                <div className={`sticky bottom-4 p-3 rounded-[2.5rem] flex items-center gap-2 border shadow-2xl ${glassClass} z-20`}>
-                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Query Aura..." className={`flex-1 bg-transparent px-4 outline-none text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`} onKeyDown={e => e.key === 'Enter' && handleChatSend()} />
-                  <button onClick={handleChatSend} className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center active:scale-90 transition-transform"><Send className="w-5 h-5 text-white" /></button>
-                </div>
-                <div className="h-10 w-full" /> {/* Extra spacer below input bar */}
+                <div className="h-32 w-full" />
               </div>
             </PageTransition>
           )}
 
           {currentView === View.PROFILE && (
             <PageTransition key="profile">
-              <div className="py-12 flex flex-col items-center text-center w-full">
-                <div className="w-28 h-28 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 relative">
-                  <User className="w-12 h-12 text-emerald-500" />
-                  {!isEditingProfile && <button onClick={startEditingProfile} className={`absolute bottom-0 right-0 p-3 rounded-full border transition-colors ${theme === 'dark' ? 'bg-white/10 border-white/10 hover:bg-white/20' : 'bg-white border-slate-200 hover:bg-slate-50'}`}><Edit3 className={`w-4 h-4 ${theme === 'dark' ? 'text-white' : 'text-slate-600'}`} /></button>}
+              <div className="py-8 flex flex-col items-center w-full">
+                <div className="relative mb-8">
+                  <div className="w-28 h-28 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative shadow-2xl">
+                    <User className="w-12 h-12 text-emerald-500" />
+                    {user?.isVerified && (
+                      <div className="absolute -top-1 -right-1">
+                        <VerifiedBadge />
+                      </div>
+                    )}
+                    {!isEditingProfile && (
+                      <button onClick={startEditingProfile} className={`absolute -bottom-1 -right-1 p-2.5 rounded-2xl border transition-colors ${theme === 'dark' ? 'bg-white/10 border-white/10 hover:bg-white/20' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-lg'}`}>
+                        <Edit3 className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-white' : 'text-slate-600'}`} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {isEditingProfile && tempProfile ? (
-                   <div className="mb-8 space-y-4 w-full px-4">
-                     <input value={tempProfile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} className={`text-3xl font-black bg-transparent border-b text-center w-full outline-none focus:border-emerald-500 p-2 ${theme === 'dark' ? 'border-white/20' : 'border-slate-200'}`} placeholder="Your Name" />
-                     <button onClick={saveProfile} className="w-full py-4 bg-emerald-500 text-black font-black rounded-2xl flex items-center justify-center gap-2 mt-4"><Save className="w-5 h-5" /> Save Changes</button>
-                   </div>
-                ) : (
-                  <>
-                    <h2 className="text-3xl font-black mb-1">{userProfile?.name || user?.email.split('@')[0]}</h2>
-                    <p className={`font-medium mb-4 ${subTextClass}`}>Tier 1 Member • {userProfile?.primaryGoal || 'Optimizing'}</p>
-                    <button onClick={toggleTheme} className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 mb-8 ${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-700'}`}>{theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</button>
-                  </>
+
+                <div className="text-center mb-8">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h2 className="text-3xl font-black">{userProfile?.name || user?.email.split('@')[0]}</h2>
+                    {user?.isVerified && <VerifiedBadge />}
+                  </div>
+                  <p className={`font-medium ${subTextClass}`}>Tier 1 Member • {userProfile?.primaryGoal || 'Optimizing'}</p>
+                </div>
+
+                {user?.isVerified && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`w-full p-6 rounded-[2rem] border border-blue-500/20 bg-blue-500/5 flex items-center gap-4 mb-6`}
+                  >
+                    <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div className="text-left overflow-hidden">
+                      <p className="text-sm font-bold text-blue-100">Verified Identity</p>
+                      <p className="text-[10px] font-mono text-blue-400/60 truncate uppercase">{user.verificationHash}</p>
+                    </div>
+                  </motion.div>
                 )}
-                <button onClick={logout} className={`w-full p-6 rounded-[2rem] flex justify-center items-center gap-3 text-rose-500 font-bold ${glassClass} mt-10 mb-20`}><LogOut className="w-5 h-5" /> Sign Out</button>
-                <div className="h-20 w-full" /> {/* Extra clearance */}
+
+                <div className="w-full space-y-3 px-2">
+                  <motion.button 
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleInviteFriend}
+                    className={`w-full p-6 rounded-[2rem] flex items-center justify-between border transition-all ${isInviteSuccess ? 'bg-emerald-500 border-emerald-400 text-black' : `${glassClass} border-emerald-500/20`}`}
+                  >
+                    <div className="flex items-center gap-4">
+                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isInviteSuccess ? 'bg-black/10' : 'bg-emerald-500/10'}`}>
+                         <Users className={`w-5 h-5 ${isInviteSuccess ? 'text-black' : 'text-emerald-500'}`} />
+                       </div>
+                       <div className="text-left">
+                         <p className="font-bold text-sm">Invite a Friend</p>
+                         <p className={`text-[10px] font-black uppercase opacity-60`}>Share Aura Intelligence</p>
+                       </div>
+                    </div>
+                    {isInviteSuccess ? <Check className="w-5 h-5" /> : <ChevronRight className="w-4 h-4 opacity-30" />}
+                  </motion.button>
+
+                  <div className={`p-1 rounded-[2.2rem] flex items-center gap-1 ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-200/50'}`}>
+                    <button onClick={() => theme !== 'light' && toggleTheme()} className={`flex-1 py-3 rounded-[1.8rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'light' ? 'bg-white text-black shadow-lg' : 'opacity-40'}`}>
+                      <Sun className="w-3.5 h-3.5" /> Light
+                    </button>
+                    <button onClick={() => theme !== 'dark' && toggleTheme()} className={`flex-1 py-3 rounded-[1.8rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-white/10 text-white shadow-lg' : 'opacity-40'}`}>
+                      <Moon className="w-3.5 h-3.5" /> Dark
+                    </button>
+                  </div>
+
+                  <button onClick={logout} className={`w-full p-6 rounded-[2rem] flex justify-center items-center gap-3 text-rose-500 font-bold ${glassClass} active:bg-rose-500/5 transition-colors`}>
+                    <LogOut className="w-5 h-5" /> Sign Out
+                  </button>
+                </div>
+                
+                <div className="h-28 w-full" />
               </div>
             </PageTransition>
           )}
         </AnimatePresence>
       </main>
 
+      {/* Persistent Dock and Modals remain same as before */}
       <div className={`fixed bottom-0 inset-x-0 h-40 flex justify-center items-center z-50 pointer-events-none bg-gradient-to-t ${theme === 'dark' ? 'from-black via-black/80' : 'from-white via-white/80'} to-transparent`}>
         <div className={`pointer-events-auto flex items-center gap-2 backdrop-blur-3xl p-3 rounded-[2.8rem] border shadow-2xl translate-y-[-15px] ${theme === 'dark' ? 'bg-neutral-900/90 border-white/10' : 'bg-white/90 border-slate-200'}`}>
           <button onClick={() => setCurrentView(View.TODAY)} className={`p-4 rounded-2xl transition-all duration-300 ${currentView === View.TODAY ? 'text-emerald-400 bg-emerald-500/10' : `${subTextClass}`}`}><Home /></button>

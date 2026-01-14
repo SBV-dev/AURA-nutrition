@@ -4,6 +4,11 @@ import { AuthContextType, User } from '../types.ts';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to generate a unique identity hash
+const generateIdentityHash = (email: string) => {
+  return btoa(email + Date.now()).substring(0, 12).toUpperCase();
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +34,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           reject(err);
           return;
         }
-        const fakeUser: User = { id: '1', email };
+        // Simulated verified user for existing accounts
+        const fakeUser: User = { 
+          id: '1', 
+          email, 
+          isVerified: true,
+          verificationHash: generateIdentityHash(email)
+        };
         setUser(fakeUser);
         localStorage.setItem('aura_user', JSON.stringify(fakeUser));
         setIsLoading(false);
@@ -57,7 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           reject(err);
           return;
         }
-        const fakeUser: User = { id: '1', email };
+        const fakeUser: User = { 
+          id: Date.now().toString(), 
+          email, 
+          isVerified: true, // Simulated as verified for this demo
+          verificationHash: generateIdentityHash(email)
+        };
         setUser(fakeUser);
         localStorage.setItem('aura_user', JSON.stringify(fakeUser));
         setIsLoading(false);
@@ -71,7 +87,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        const fakeUser: User = { id: 'google_user_123', email: 'user@gmail.com', name: 'Google User' };
+        const email = 'user@gmail.com';
+        const fakeUser: User = { 
+          id: 'google_user_123', 
+          email: email, 
+          name: 'Google User',
+          isVerified: true,
+          verificationHash: generateIdentityHash(email)
+        };
         setUser(fakeUser);
         localStorage.setItem('aura_user', JSON.stringify(fakeUser));
         setIsLoading(false);

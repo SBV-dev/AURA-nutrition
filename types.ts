@@ -1,5 +1,4 @@
 
-
 export enum View {
   AUTH = 'auth',
   ONBOARDING = 'onboarding',
@@ -34,6 +33,8 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  isVerified: boolean;
+  verificationHash?: string;
 }
 
 export interface AuthContextType {
