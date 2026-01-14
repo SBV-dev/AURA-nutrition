@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Minus, Plus, GlassWater, Check, X, Container } from 'lucide-react';
-import { COLORS } from '../constants.ts';
+import { COLORS } from '../constants';
 
 interface HydrationModalProps {
   currentAmount: number;
