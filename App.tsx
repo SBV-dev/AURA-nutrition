@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
@@ -7,7 +6,7 @@ import {
   ArrowLeft, Utensils, Send, Loader2, Check, Zap, CheckCircle2, ShieldAlert,
   Clock, ShoppingBag, Info, X, ChevronDown, ListChecks, Trash2, Mail, Lock,
   Ruler, Weight, Activity, Trophy, Settings2, Coffee, Leaf, AlertCircle, Edit3, Save, Image as ImageIcon,
-  TrendingUp, Star, Thermometer, Bookmark, History, FileText, Moon, Sun, KeyRound, LogOut
+  TrendingUp, Star, Thermometer, Bookmark, History, FileText, Moon, Sun, KeyRound, LogOut, RefreshCw
 } from 'lucide-react';
 
 import { View, Meal, UserGoal, NutritionEstimateResponse, HydrationEntry, WeightEntry, Message, MealPlan, ShoppingCategory, UserProfile, Gender, ActivityLevel, GoalType, MacroPreference, SnackPreference, SpiceLevel, TasteProfile } from './types.ts';
@@ -53,17 +52,11 @@ const StreakCounter: React.FC<{ days: number }> = ({ days }) => (
     <motion.div
       animate={{ 
         scale: [1, 1.15, 1],
-        filter: ["brightness(1)", "brightness(1.2)", "brightness(1)"]
       }}
       transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
       className="relative z-10"
     >
       <Flame className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-      <motion.div 
-        animate={{ y: [0, -8], opacity: [1, 0], x: [0, 2] }}
-        transition={{ duration: 0.8, repeat: Infinity, ease: "easeOut" }}
-        className="absolute -top-1 right-0 w-0.5 h-0.5 bg-orange-300 rounded-full"
-      />
     </motion.div>
     <span className="text-[10px] font-black text-orange-100 uppercase tracking-wide relative z-10">
       <span className="text-orange-400 mr-0.5">{days}</span> Day Streak
@@ -195,8 +188,8 @@ const Onboarding: React.FC<{ onComplete: (profile: UserProfile) => void }> = ({ 
               </div>
               <div>
                  <label className={`text-xs font-bold uppercase mb-2 block ${theme === 'dark' ? 'text-white/50' : 'text-slate-400'}`}>Gender</label>
-                 <select value={data.gender} onChange={e => update('gender', e.target.value)} className={`w-full p-4 rounded-2xl outline-none font-bold appearance-none ${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-white border text-slate-900'}`}>
-                    {['Male', 'Female', 'Other'].map(o => <option key={o}>{o}</option>)}
+                 <select value={data.gender} onChange={e => update('gender', e.target.value as any)} className={`w-full p-4 rounded-2xl outline-none font-bold appearance-none ${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-white border text-slate-900'}`}>
+                    {['Male', 'Female', 'Other'].map(o => <option key={o} value={o}>{o}</option>)}
                  </select>
               </div>
            </div>
@@ -230,8 +223,8 @@ const Onboarding: React.FC<{ onComplete: (profile: UserProfile) => void }> = ({ 
         <div className="space-y-4">
            <div>
              <label className={`text-xs font-bold uppercase mb-2 block ${theme === 'dark' ? 'text-white/50' : 'text-slate-400'}`}>Activity Level</label>
-             <select value={data.activityLevel} onChange={e => update('activityLevel', e.target.value)} className={`w-full p-4 rounded-2xl outline-none font-bold appearance-none ${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-white border text-slate-900'}`}>
-                {['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active', 'Super Active'].map(o => <option key={o}>{o}</option>)}
+             <select value={data.activityLevel} onChange={e => update('activityLevel', e.target.value as any)} className={`w-full p-4 rounded-2xl outline-none font-bold appearance-none ${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-white border text-slate-900'}`}>
+                {['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active', 'Super Active'].map(o => <option key={o} value={o}>{o}</option>)}
              </select>
            </div>
            <div>
@@ -300,6 +293,17 @@ const AppContent: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Derived Insights data (Dynamic)
+  const totals = useMemo(() => meals.reduce((acc, meal) => ({
+    calories: acc.calories + meal.calories,
+    protein: acc.protein + meal.macros.protein,
+    carbs: acc.carbs + meal.macros.carbs,
+    fats: acc.fats + meal.macros.fats,
+  }), { calories: 0, protein: 0, carbs: 0, fats: 0 }), [meals]);
+
+  const waterTotal = useMemo(() => hydration.reduce((acc, curr) => acc + curr.amount, 0), [hydration]);
+  const compliance = useMemo(() => goal.calories > 0 ? Math.min(100, Math.round((totals.calories / goal.calories) * 100)) : 0, [totals, goal]);
+
   // Persistence: Load on startup
   useEffect(() => {
     if (user && !authLoading) {
@@ -346,15 +350,6 @@ const AppContent: React.FC = () => {
       if (userProfile) localStorage.setItem(`aura_profile_${uId}`, JSON.stringify(userProfile));
     }
   }, [meals, hydration, goal, userProfile, savedPlans, chatMessages, user]);
-
-  const totals = useMemo(() => meals.reduce((acc, meal) => ({
-    calories: acc.calories + meal.calories,
-    protein: acc.protein + meal.macros.protein,
-    carbs: acc.carbs + meal.macros.carbs,
-    fats: acc.fats + meal.macros.fats,
-  }), { calories: 0, protein: 0, carbs: 0, fats: 0 }), [meals]);
-
-  const waterTotal = useMemo(() => hydration.reduce((acc, curr) => acc + curr.amount, 0), [hydration]);
 
   const appBgClass = theme === 'dark' ? 'bg-black text-white' : 'bg-slate-50 text-slate-900';
   const glassClass = theme === 'dark' ? 'glass' : 'bg-white border border-slate-200 shadow-sm';
@@ -509,7 +504,7 @@ const AppContent: React.FC = () => {
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar px-6 pb-44 relative z-10">
+      <main className="flex-1 overflow-y-auto no-scrollbar px-6 pb-64 relative z-10">
         <AnimatePresence mode="wait">
           {currentView === View.TODAY && (
             <PageTransition key="today">
@@ -552,6 +547,7 @@ const AppContent: React.FC = () => {
                     )}
                   </div>
                 </div>
+                <div className="h-20 w-full" /> {/* Spacer to clear bottom dock */}
               </div>
             </PageTransition>
           )}
@@ -559,12 +555,23 @@ const AppContent: React.FC = () => {
           {currentView === View.PLANNER && (
             <PageTransition key="planner">
               <div className="flex flex-col pt-4 gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-emerald-500 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-emerald-500/20"><Calendar className="w-8 h-8 text-black" /></div>
-                  <div>
-                    <h2 className="text-2xl font-black">Daily Architect</h2>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${subTextClass}`}>Meal Synthesis Engine</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-emerald-500 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-emerald-500/20"><Calendar className="w-8 h-8 text-black" /></div>
+                    <div>
+                      <h2 className="text-2xl font-black">Daily Architect</h2>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${subTextClass}`}>Meal Synthesis Engine</p>
+                    </div>
                   </div>
+                  {mealPlan && (
+                    <button 
+                      onClick={() => setMealPlan(null)} 
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border border-white/10 ${theme === 'dark' ? 'bg-white/5' : 'bg-white shadow-sm'}`}
+                      title="Generate New Plan"
+                    >
+                      <RefreshCw className="w-5 h-5 opacity-60" />
+                    </button>
+                  )}
                 </div>
 
                 {!mealPlan ? (
@@ -594,8 +601,8 @@ const AppContent: React.FC = () => {
 
                     {planError && <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold text-center animate-pulse">{planError}</div>}
 
-                    <button onClick={handleGeneratePlan} disabled={isGeneratingPlan} className="w-full py-5 bg-emerald-500 text-black font-black rounded-[1.8rem] shadow-xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-3">
-                      {isGeneratingPlan ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Zap className="w-5 h-5 fill-black" /> Synthesize Plan</>}
+                    <button onClick={handleGeneratePlan} disabled={isGeneratingPlan} className="w-full py-5 bg-emerald-500 text-black font-black rounded-[1.8rem] shadow-xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 relative z-20">
+                      {isGeneratingPlan ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Zap className="w-5 h-5 fill-black" /> Generate Meal Plan</>}
                     </button>
                   </div>
                 ) : (
@@ -642,8 +649,8 @@ const AppContent: React.FC = () => {
                              </div>
                            </motion.div>
                         ))}
-                        <button onClick={() => setMealPlan(null)} className={`w-full p-5 rounded-[1.8rem] text-xs font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity border border-white/5`}>
-                           Discard and Regenerate
+                        <button onClick={() => setMealPlan(null)} className={`w-full p-5 rounded-[1.8rem] text-xs font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity border border-white/5 mb-4`}>
+                           Generate New Plan
                         </button>
                       </div>
                     ) : (
@@ -667,6 +674,7 @@ const AppContent: React.FC = () => {
                     )}
                   </div>
                 )}
+                <div className="h-32 w-full" /> {/* Extra clearance for the generation button config */}
               </div>
             </PageTransition>
           )}
@@ -688,29 +696,30 @@ const AppContent: React.FC = () => {
                       <TrendingUp className="w-5 h-5 text-emerald-500" />
                    </div>
                    <BarChart 
-                      data={[2100, 2350, 1980, 2200, 2450, 2100, totals.calories]} 
+                      data={[0, 0, 0, 0, 0, 0, totals.calories]} 
                       labels={['M', 'T', 'W', 'T', 'F', 'S', 'S']} 
-                      maxValue={3000} 
+                      maxValue={Math.max(goal.calories, totals.calories)} 
                       color={COLORS.primary} 
                    />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                    <div className={`p-6 rounded-[2rem] ${glassClass}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${subTextClass}`}>Avg Protein</p>
-                      <p className="text-2xl font-black">154<span className="text-xs ml-1 opacity-40">g</span></p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${subTextClass}`}>Consumed Protein</p>
+                      <p className="text-2xl font-black">{Math.round(totals.protein)}<span className="text-xs ml-1 opacity-40">g</span></p>
                       <div className="h-1 w-full bg-blue-500/20 rounded-full mt-3 overflow-hidden">
-                         <div className="h-full bg-blue-500 w-[85%]" />
+                         <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (totals.protein / goal.protein) * 100)}%` }} />
                       </div>
                    </div>
                    <div className={`p-6 rounded-[2rem] ${glassClass}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${subTextClass}`}>Compliance</p>
-                      <p className="text-2xl font-black">92<span className="text-xs ml-1 opacity-40">%</span></p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${subTextClass}`}>Goal Compliance</p>
+                      <p className="text-2xl font-black">{compliance}<span className="text-xs ml-1 opacity-40">%</span></p>
                       <div className="h-1 w-full bg-emerald-500/20 rounded-full mt-3 overflow-hidden">
-                         <div className="h-full bg-emerald-500 w-[92%]" />
+                         <div className="h-full bg-emerald-500" style={{ width: `${compliance}%` }} />
                       </div>
                    </div>
                 </div>
+                <div className="h-20 w-full" /> {/* Spacer to clear bottom dock */}
               </div>
             </PageTransition>
           )}
@@ -734,11 +743,13 @@ const AppContent: React.FC = () => {
                     </div>
                   ))}
                   {isChatTyping && <div className={`p-4 rounded-2xl w-fit flex gap-1.5 animate-pulse ${glassClass}`}><div className="w-2 h-2 bg-indigo-500/40 rounded-full" /><div className="w-2 h-2 bg-indigo-500/40 rounded-full" /><div className="w-2 h-2 bg-indigo-500/40 rounded-full" /></div>}
+                  <div className="h-20 w-full" /> {/* Spacer for chat messages list */}
                 </div>
-                <div className={`sticky bottom-4 p-3 rounded-[2.5rem] flex items-center gap-2 border shadow-2xl ${glassClass}`}>
+                <div className={`sticky bottom-4 p-3 rounded-[2.5rem] flex items-center gap-2 border shadow-2xl ${glassClass} z-20`}>
                   <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Query Aura..." className={`flex-1 bg-transparent px-4 outline-none text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`} onKeyDown={e => e.key === 'Enter' && handleChatSend()} />
                   <button onClick={handleChatSend} className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center active:scale-90 transition-transform"><Send className="w-5 h-5 text-white" /></button>
                 </div>
+                <div className="h-10 w-full" /> {/* Extra spacer below input bar */}
               </div>
             </PageTransition>
           )}
@@ -762,7 +773,8 @@ const AppContent: React.FC = () => {
                     <button onClick={toggleTheme} className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 mb-8 ${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-700'}`}>{theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</button>
                   </>
                 )}
-                <button onClick={logout} className={`w-full p-6 rounded-[2rem] flex justify-center items-center gap-3 text-rose-500 font-bold ${glassClass} mt-10`}><LogOut className="w-5 h-5" /> Sign Out</button>
+                <button onClick={logout} className={`w-full p-6 rounded-[2rem] flex justify-center items-center gap-3 text-rose-500 font-bold ${glassClass} mt-10 mb-20`}><LogOut className="w-5 h-5" /> Sign Out</button>
+                <div className="h-20 w-full" /> {/* Extra clearance */}
               </div>
             </PageTransition>
           )}
