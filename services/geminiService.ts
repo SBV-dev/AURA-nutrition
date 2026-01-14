@@ -1,7 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { NutritionEstimateResponse, MealPlan, UserGoal, UserProfile, PlanConfiguration, Meal, Message } from "../types";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { NutritionEstimateResponse, MealPlan, UserGoal, UserProfile, PlanConfiguration, Message } from "../types";
 
 function cleanJsonText(text: string): string {
   if (!text) return '{}';
@@ -39,12 +37,19 @@ const NUTRITION_SCHEMA = {
 export async function estimateNutrition(
   input: { text?: string; imageBase64?: string; mimeType?: string }
 ): Promise<NutritionEstimateResponse> {
-  const model = 'gemini-3-flash-preview';
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const model = 'gemini-3-pro-preview';
   const parts: any[] = [];
+  
   if (input.text) parts.push({ text: `Analyze the following meal description: "${input.text}"` });
   if (input.imageBase64) {
-    parts.push({ inlineData: { mimeType: input.mimeType || "image/jpeg", data: input.imageBase64 } });
-    parts.push({ text: "Analyze this meal image. Identify ingredients and estimate standard serving sizes." });
+    parts.push({ 
+      inlineData: { 
+        mimeType: input.mimeType || "image/jpeg", 
+        data: input.imageBase64 
+      } 
+    });
+    parts.push({ text: "Analyze this meal image. Identify all food items, estimate serving sizes, and provide a full nutritional breakdown." });
   }
 
   const response = await ai.models.generateContent({
@@ -53,7 +58,8 @@ export async function estimateNutrition(
     config: {
       responseMimeType: "application/json",
       responseSchema: NUTRITION_SCHEMA,
-      systemInstruction: "You are a world-class culinary nutritionist. Provide accurate estimates for foods based on global cuisine knowledge."
+      systemInstruction: "You are Aura Nutrition Intelligence, a world-class culinary nutritionist. Provide pinpoint accurate estimates using vision and language reasoning.",
+      thinkingConfig: { thinkingBudget: 8192 }
     }
   });
 
@@ -61,13 +67,20 @@ export async function estimateNutrition(
     return JSON.parse(cleanJsonText(response.text || "{}"));
   } catch (e) {
     console.error("Failed to parse nutrition estimate", e);
-    throw new Error("Could not analyze nutrition data.");
+    throw new Error("Bio-analysis synthesis failed.");
   }
 }
 
 export async function generateMealPlan(goals: UserGoal, config: PlanConfiguration): Promise<MealPlan> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = 'gemini-3-pro-preview';
-  const prompt = `Create a 1-day meal plan: Cal: ${goals.calories}, Protein: ${goals.protein}g. Preference: ${config.macroPreference}.`;
+  const prompt = `Synthesize a high-performance 1-day meal plan based on these targets: 
+    Daily Calories: ${goals.calories}kcal, 
+    Protein: ${goals.protein}g, 
+    Carbs: ${goals.carbs}g, 
+    Fats: ${goals.fats}g. 
+    Preference Profile: ${config.macroPreference}, ${config.spiceLevel} spice, ${config.tasteProfile} taste.
+    Restrictions: ${config.dietaryRestrictions || 'None'}.`;
 
   const response = await ai.models.generateContent({
     model,
@@ -118,28 +131,25 @@ export async function generateMealPlan(goals: UserGoal, config: PlanConfiguratio
         },
         required: ["id", "name", "meals", "categorizedShoppingList", "prepTimeTotal", "chefTips"]
       },
-      systemInstruction: "You are a professional nutritionist. Thinking budget is active for complex reasoning.",
-      thinkingConfig: { thinkingBudget: 8192 }
+      systemInstruction: "You are Aura Architect. Design a bio-available, delicious meal plan that meets exact caloric targets.",
+      thinkingConfig: { thinkingBudget: 12000 }
     }
   });
 
   try {
     return JSON.parse(cleanJsonText(response.text || "{}"));
   } catch (e) {
-    throw new Error("Failed to generate meal plan.");
+    throw new Error("Meal plan synthesis timed out.");
   }
 }
 
 export async function calculateNutritionalGoals(profile: UserProfile): Promise<UserGoal> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = 'gemini-3-flash-preview';
-  const s = profile.gender === 'Male' ? 5 : -161;
-  const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + s;
-  const multiplier = 1.375;
-  const tdee = bmr * multiplier;
 
   const response = await ai.models.generateContent({
     model,
-    contents: `Calculate goals: ${JSON.stringify(profile)}`,
+    contents: `Calculate optimal daily macros and water intake for this profile: ${JSON.stringify(profile)}. Goal: ${profile.primaryGoal}.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -160,19 +170,43 @@ export async function calculateNutritionalGoals(profile: UserProfile): Promise<U
   try {
     return JSON.parse(cleanJsonText(response.text || "{}"));
   } catch (e) {
-     return { calories: Math.round(tdee), protein: Math.round(profile.weight * 2), carbs: Math.round((tdee * 0.4) / 4), fats: Math.round((tdee * 0.3) / 9), weight: profile.weight, water: 2500 };
+    const s = profile.gender === 'Male' ? 5 : -161;
+    const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + s;
+    const tdee = Math.round(bmr * 1.375);
+    return { 
+      calories: tdee, 
+      protein: profile.weight * 2, 
+      carbs: Math.round((tdee * 0.4) / 4), 
+      fats: Math.round((tdee * 0.3) / 9), 
+      weight: profile.weight, 
+      water: 2500 
+    };
   }
 }
 
 export async function getChatResponse(history: Message[], query: string, context: any): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = 'gemini-3-pro-preview';
+  
+  const conversation = history.map(m => ({
+    role: m.role === 'model' ? 'model' : 'user',
+    parts: [{ text: m.text }]
+  }));
+
   const response = await ai.models.generateContent({
     model,
-    contents: `Query: ${query}`,
+    contents: conversation,
     config: {
-      systemInstruction: "You are Aura AI. Be concise and bio-optimized in your responses.",
+      systemInstruction: `You are Aura AI, the user's elite bio-optimization assistant. 
+        CURRENT USER CONTEXT:
+        Profile: ${JSON.stringify(context.profile)}
+        Current Goals: ${JSON.stringify(context.goals)}
+        Today's Progress: ${context.meals.length} meals logged, ${context.hydration}ml water.
+        
+        Guidelines: Be concise, highly professional, and scientifically grounded. Focus on actionable metabolic advice.`,
       thinkingConfig: { thinkingBudget: 8192 }
     }
   });
-  return response.text || "I'm sorry, I couldn't process that.";
+  
+  return response.text || "Metabolic sync interrupted. Please query again.";
 }

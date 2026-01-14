@@ -317,7 +317,6 @@ const AppContent: React.FC = () => {
   const waterTotal = useMemo(() => hydration.reduce((acc, curr) => acc + curr.amount, 0), [hydration]);
   const compliance = useMemo(() => goal.calories > 0 ? Math.min(100, Math.round((totals.calories / goal.calories) * 100)) : 0, [totals, goal]);
 
-  // DERIVED DATA FOR INSIGHTS (Removing Mock)
   const dailyCalorieHistory = useMemo(() => {
     const history = [];
     const today = new Date();
@@ -336,7 +335,6 @@ const AppContent: React.FC = () => {
   }, [meals]);
 
   const dailyWeightHistory = useMemo(() => {
-    // Return profile weight for now as base trend if no history
     const base = userProfile?.weight || goal.weight || 0;
     return Array(7).fill(base);
   }, [userProfile, goal]);
@@ -608,7 +606,7 @@ Powered by Aura Nutrition AI 🚀`;
         </button>
       </header>
 
-      <main className={`flex-1 overflow-y-auto no-scrollbar px-6 relative z-10 ${currentView === View.CHAT ? 'pb-80' : 'pb-64'}`}>
+      <main className={`flex-1 overflow-y-auto no-scrollbar px-6 relative z-10 ${currentView === View.CHAT ? 'pb-96' : 'pb-64'}`}>
         <AnimatePresence mode="wait">
           {currentView === View.TODAY && (
             <PageTransition key="today">
@@ -837,7 +835,7 @@ Powered by Aura Nutrition AI 🚀`;
                   )}
                 </div>
 
-                <div className="fixed bottom-36 left-6 right-6 z-20">
+                <div className="fixed bottom-[130px] left-6 right-6 z-20">
                   <div className={`p-2 rounded-[2rem] border backdrop-blur-3xl shadow-2xl flex items-center gap-2 ${theme === 'dark' ? 'bg-neutral-900/90 border-white/10' : 'bg-white/90 border-slate-200'}`}>
                     <input 
                       value={chatInput}
